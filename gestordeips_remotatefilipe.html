@@ -1,309 +1,333 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ControloBigMACFilipe — Gestão de IPs</title>
-    <link rel="stylesheet" href="https://googleapis.com"/>
-    
+    <link rel="stylesheet" href="https://googleapis.com">
     <style>
         :root {
-            --bg-color: #0b0f17;
-            --card-bg: #131924;
-            --input-bg: #1a2333;
+            --bg-main: #0b0f19;
+            --bg-card: #111823;
+            --bg-input: #172030;
+            --border-color: #1f293d;
             --text-main: #f3f4f6;
             --text-muted: #9ca3af;
-            --green-accent: #10b981;
-            --border-color: #1e293b;
+            --color-green: #10b981;
+            --color-red: #f43f5e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
-            background-color: var(--bg-color);
+            background-color: var(--bg-main);
             color: var(--text-main);
             font-family: 'IBM Plex Sans', sans-serif;
-            margin: 0;
-            padding: 24px;
+            padding: 2rem;
+            min-height: 100vh;
         }
 
+        /* --- HEADER --- */
         header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            margin-bottom: 2rem;
         }
 
-        .logo {
+        .brand .logo {
             font-family: 'JetBrains Mono', monospace;
-            font-weight: bold;
-            font-size: 20px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
-        .logo span { color: var(--green-accent); }
-        .logo-sub {
-            font-size: 12px;
+
+        .brand .logo span {
+            color: var(--color-green);
+        }
+
+        .brand .subtitle {
+            font-size: 0.85rem;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 0.25rem;
         }
 
-        .stats {
+        .header-actions {
             display: flex;
-            gap: 20px;
-            font-size: 14px;
+            align-items: center;
+            gap: 1.5rem;
         }
-        .stats span { font-weight: 600; }
-        .stats .online { color: var(--green-accent); }
-        .stats .others { color: #f43f5e; }
 
-        .btn-add {
-            background-color: #15803d;
-            color: white;
+        .counters {
+            display: flex;
+            gap: 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        .counters p span {
+            font-weight: 600;
+        }
+
+        .counters p .count-online { color: var(--color-green); }
+        .counters p .count-others { color: var(--color-red); }
+
+        .btn-primary {
+            background-color: #166534;
+            color: #ffffff;
             border: none;
-            padding: 8px 16px;
+            padding: 0.5rem 1rem;
             border-radius: 6px;
+            font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
-            font-size: 14px;
+            transition: background-color 0.2s;
         }
 
-        .main-layout {
+        .btn-primary:hover {
+            background-color: #15803d;
+        }
+
+        /* --- LAYOUT PRINCIPAL --- */
+        .dashboard {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 24px;
+            gap: 1.5rem;
         }
 
         .card {
-            background-color: var(--card-bg);
+            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 20px;
+            padding: 1.5rem;
         }
 
-        .search-box {
-            background-color: var(--input-bg);
+        /* --- FILTROS DE PESQUISA --- */
+        .search-bar {
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            padding: 10px 14px;
-            border-radius: 6px;
             width: 100%;
-            box-sizing: border-box;
-            margin-bottom: 12px;
-            font-size: 14px;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 0.75rem;
+            outline: none;
         }
 
-        .filter-select {
-            background-color: var(--input-bg);
+        .select-filter {
+            background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-main);
-            padding: 10px;
-            border-radius: 6px;
             width: 100%;
-            margin-bottom: 20px;
-            font-size: 14px;
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            outline: none;
             cursor: pointer;
+        }
+
+        /* --- TABELA --- */
+        .table-container {
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
+            text-align: left;
+            font-size: 0.9rem;
         }
 
         th {
-            text-align: left;
             color: var(--text-muted);
-            font-weight: 500;
-            padding: 12px 8px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 12px;
+            font-size: 0.75rem;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid var(--border-color);
         }
 
         td {
-            padding: 14px 8px;
-            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+            padding: 1rem 0.5rem;
+            border-bottom: 1px solid rgba(31, 41, 61, 0.4);
         }
 
         tbody tr {
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: background-color 0.15s;
         }
 
         tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.02);
         }
 
-        tbody tr.selected {
-            background-color: rgba(16, 185, 129, 0.1);
+        tbody tr.active-row {
+            background-color: rgba(16, 185, 129, 0.08);
         }
 
-        .ip-cell {
+        .ip-column {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.5rem;
         }
 
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: var(--green-accent);
+        .indicator {
+            width: 6px;
+            height: 6px;
+            background-color: var(--color-green);
             border-radius: 50%;
-            display: inline-block;
         }
 
-        .mac-text {
+        .mac-address {
             font-family: 'JetBrains Mono', monospace;
             color: var(--text-muted);
         }
 
-        .action-link {
-            color: #f43f5e;
+        .btn-delete {
+            color: var(--color-red);
             text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: 0.85rem;
         }
-        
-        .action-link:hover {
+
+        .btn-delete:hover {
             text-decoration: underline;
         }
 
-        .details-empty {
+        /* --- PAINEL LATERAL DE DETALHES --- */
+        .panel-placeholder {
             color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 150px;
+            font-size: 0.9rem;
             text-align: center;
-            font-size: 14px;
+            padding: 3rem 1rem;
         }
 
-        .details-content h3 {
-            margin-top: 0;
-            color: var(--green-accent);
+        .details-container h2 {
             font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--color-green);
+            margin-bottom: 1.25rem;
         }
 
         .details-grid {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 10px;
-            font-size: 14px;
-            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .details-row {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(31, 41, 61, 0.3);
+            padding-bottom: 0.5rem;
         }
 
         .details-label {
             color: var(--text-muted);
+        }
+
+        .details-value {
             font-weight: 500;
+        }
+
+        .details-value.mono {
+            font-family: 'JetBrains Mono', monospace;
         }
     </style>
 </head>
 <body>
 
-    <!-- Cabeçalho -->
+    <!-- Header / Topo -->
     <header>
-        <div>
+        <div class="brand">
             <div class="logo">> ControloBigMACFilipe<span>_</span></div>
-            <div class="logo-sub">Gestão de IPs e periféricos</div>
+            <div class="subtitle">Gestão de IPs e periféricos</div>
         </div>
-        <div style="display: flex; align-items: center; gap: 24px;">
-            <div class="stats">
-                <div>Total <span id="stat-total">3</span></div>
-                <div>Online <span id="stat-online" class="online">3</span></div>
-                <div>Outros <span id="stat-others" class="others">0</span></div>
+        <div class="header-actions">
+            <div class="counters">
+                <p>Total: <span id="count-total">0</span></p>
+                <p>Online: <span id="count-online" class="count-online">0</span></p>
+                <p>Outros: <span id="count-others" class="count-others">0</span></p>
             </div>
-            <button class="btn-add" id="btn-add">+ Meter IP</button>
+            <button class="btn-primary" id="add-device-btn">+ Meter IP</button>
         </div>
     </header>
 
-    <!-- Layout Principal -->
-    <div class="main-layout">
+    <!-- Content / Dashboard -->
+    <main class="dashboard">
         
-        <!-- Tabela e Filtros -->
-        <div class="card">
-            <input type="text" id="search-input" class="search-box" placeholder="Procurar IP, MAC, nome, fabricante..."/>
+        <!-- Bloco de Listagem e Filtros -->
+        <section class="card">
+            <input type="text" id="search-input" class="search-bar" placeholder="Procurar IP, MAC, nome, fabricante...">
             
-            <select id="filter-select" class="filter-select">
+            <select id="type-filter" class="select-filter">
                 <option value="Todos">Todos</option>
                 <option value="Router">Router</option>
                 <option value="Impressora">Impressora</option>
                 <option value="Portátil">Portátil</option>
             </select>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>IP</th>
-                        <th>MAC</th>
-                        <th>HOSTNAME</th>
-                        <th>TIPO</th>
-                        <th>FABRICANTE</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody id="device-table-body">
-                    <tr data-id="1">
-                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.1</div></td>
-                        <td class="mac-text">A4:2B:B0:11:22:33</td>
-                        <td>router-principal</td>
-                        <td>Router</td>
-                        <td>TP-Link</td>
-                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
-                    </tr>
-                    <tr data-id="2">
-                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.20</div></td>
-                        <td class="mac-text">3C:52:82:AA:BB:CC</td>
-                        <td>impressora-hp</td>
-                        <td>Impressora</td>
-                        <td>HP</td>
-                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
-                    </tr>
-                    <tr data-id="3">
-                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.50</div></td>
-                        <td class="mac-text">F0:18:98:12:34:56</td>
-                        <td>macbook-filipe</td>
-                        <td>Portátil</td>
-                        <td>Apple</td>
-                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>IP</th>
+                            <th>MAC</th>
+                            <th>Hostname</th>
+                            <th>Tipo</th>
+                            <th>Fabricante</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="devices-list">
+                        <!-- Gerado dinamicamente via JS para permitir controlo mútuo perfeito -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
-        <!-- Painel Lateral de Detalhes -->
-        <div class="card" style="height: fit-content;" id="details-panel">
-            <div class="details-empty">
+        <!-- Bloco de Detalhes -->
+        <aside class="card" id="details-sidebar" style="height: fit-content;">
+            <div class="panel-placeholder">
                 Escolhe um periférico para ver os detalhes.
             </div>
-        </div>
+        </aside>
 
-    </div>
+    </main>
 
+    <!-- Lógica de Controlo Mútuo -->
     <script>
-        // Elementos do DOM
-        const searchInput = document.getElementById('search-input');
-        const filterSelect = document.getElementById('filter-select');
-        const tableBody = document.getElementById('device-table-body');
-        const detailsPanel = document.getElementById('details-panel');
+        // Base de dados local (Array de objetos)
+        let dispositivos = [
+            { id: 1, ip: "192.168.1.1", mac: "A4:2B:B0:11:22:33", hostname: "router-principal", tipo: "Router", fabricante: "TP-Link" },
+            { id: 2, ip: "192.168.1.20", mac: "3C:52:82:AA:BB:CC", hostname: "impressora-hp", tipo: "Impressora", fabricante: "HP" },
+            { id: 3, ip: "192.168.1.50", mac: "F0:18:98:12:34:56", hostname: "macbook-filipe", tipo: "Portátil", fabricante: "Apple" }
+        ];
 
-        // Atualizar Contadores Globais
-        function updateStats() {
-            const rows = tableBody.querySelectorAll('tr:not([style*="display: none"])');
-            const totalRows = tableBody.querySelectorAll('tr').length;
-            
-            document.getElementById('stat-total').textContent = totalRows;
-            document.getElementById('stat-online').textContent = totalRows; // Assumindo todos online nesta simulação
+        let dispositivoSelecionadoId = null;
+
+        // Elementos do DOM
+        const devicesList = document.getElementById('devices-list');
+        const searchInput = document.getElementById('search-input');
+        const typeFilter = document.getElementById('type-filter');
+        const detailsSidebar = document.getElementById('details-sidebar');
+
+        // Renderiza e atualiza os contadores globais
+        function renderCounters() {
+            document.getElementById('count-total').textContent = dispositivos.length;
+            document.getElementById('count-online').textContent = dispositivos.length; // Simulando todos ativos
+            document.getElementById('count-others').textContent = 0;
         }
 
-        // Função Combinada de Filtros (Filtro mútuo)
-        function filterTable() {
-            const searchText = searchInput.value.toLowerCase();
-            const selectedType = filterSelect.value;
-            const rows = tableBody.querySelectorAll('tr');
-
-            rows.forEach(row => {
-                const ip = row.cells[0].textContent.toLowerCase();
-                const mac = row.cells[1].textContent.toLowerCase();
-                const hostname = row.cells[2].textContent.toLowerCase();
-                const tipo = row.cells[3].textContent;
-                const fabricante = row.cells[4].textContent.toLowerCase();
-
-                const matchesSearch = ip.includes(searchText) || 
-                                      mac.includes(searchText) || 
+        // Renderiza o painel lateral com base no estado atual
+        function renderDetailsPanel() {
+            const dispositivo = dispositivos.find(d => d.id === dispositivoSelecionadoId);
+            
+            if (!dispositivo) {
+                detailsSidebar.innerHTML = `
+                    <div class="panel-placeholder">
