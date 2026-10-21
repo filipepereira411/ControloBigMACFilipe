@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>ControloBigMACFilipe — Gestão de IPs</title>
+    <link rel="stylesheet" href="https://googleapis.com"/>
+    
+    <style>
+        :root {
+            --bg-color: #0b0f17;
+            --card-bg: #131924;
+            --input-bg: #1a2333;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --green-accent: #10b981;
+            --border-color: #1e293b;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'IBM Plex Sans', sans-serif;
+            margin: 0;
+            padding: 24px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .logo span { color: var(--green-accent); }
+        .logo-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+        }
+        .stats span { font-weight: 600; }
+        .stats .online { color: var(--green-accent); }
+        .stats .others { color: #f43f5e; }
+
+        .btn-add {
+            background-color: #15803d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .search-box {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 6px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .filter-select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px;
+            border-radius: 6px;
+            width: 100%;
+            margin-bottom: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 14px 8px;
+            border-bottom: 1px solid rgba(30, 41, 59, 0.5);
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        tbody tr.selected {
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .ip-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--green-accent);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .mac-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        .action-link {
+            color: #f43f5e;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        
+        .action-link:hover {
+            text-decoration: underline;
+        }
+
+        .details-empty {
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 150px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .details-content h3 {
+            margin-top: 0;
+            color: var(--green-accent);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+
+        .details-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cabeçalho -->
+    <header>
+        <div>
+            <div class="logo">> ControloBigMACFilipe<span>_</span></div>
+            <div class="logo-sub">Gestão de IPs e periféricos</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 24px;">
+            <div class="stats">
+                <div>Total <span id="stat-total">3</span></div>
+                <div>Online <span id="stat-online" class="online">3</span></div>
+                <div>Outros <span id="stat-others" class="others">0</span></div>
+            </div>
+            <button class="btn-add" id="btn-add">+ Meter IP</button>
+        </div>
+    </header>
+
+    <!-- Layout Principal -->
+    <div class="main-layout">
+        
+        <!-- Tabela e Filtros -->
+        <div class="card">
+            <input type="text" id="search-input" class="search-box" placeholder="Procurar IP, MAC, nome, fabricante..."/>
+            
+            <select id="filter-select" class="filter-select">
+                <option value="Todos">Todos</option>
+                <option value="Router">Router</option>
+                <option value="Impressora">Impressora</option>
+                <option value="Portátil">Portátil</option>
+            </select>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>IP</th>
+                        <th>MAC</th>
+                        <th>HOSTNAME</th>
+                        <th>TIPO</th>
+                        <th>FABRICANTE</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="device-table-body">
+                    <tr data-id="1">
+                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.1</div></td>
+                        <td class="mac-text">A4:2B:B0:11:22:33</td>
+                        <td>router-principal</td>
+                        <td>Router</td>
+                        <td>TP-Link</td>
+                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
+                    </tr>
+                    <tr data-id="2">
+                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.20</div></td>
+                        <td class="mac-text">3C:52:82:AA:BB:CC</td>
+                        <td>impressora-hp</td>
+                        <td>Impressora</td>
+                        <td>HP</td>
+                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
+                    </tr>
+                    <tr data-id="3">
+                        <td><div class="ip-cell"><span class="status-dot"></span>192.168.1.50</div></td>
+                        <td class="mac-text">F0:18:98:12:34:56</td>
+                        <td>macbook-filipe</td>
+                        <td>Portátil</td>
+                        <td>Apple</td>
+                        <td><a href="#" class="action-link btn-delete">Tirar</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Painel Lateral de Detalhes -->
+        <div class="card" style="height: fit-content;" id="details-panel">
+            <div class="details-empty">
+                Escolhe um periférico para ver os detalhes.
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Elementos do DOM
+        const searchInput = document.getElementById('search-input');
+        const filterSelect = document.getElementById('filter-select');
+        const tableBody = document.getElementById('device-table-body');
+        const detailsPanel = document.getElementById('details-panel');
+
+        // Atualizar Contadores Globais
+        function updateStats() {
+            const rows = tableBody.querySelectorAll('tr:not([style*="display: none"])');
+            const totalRows = tableBody.querySelectorAll('tr').length;
+            
+            document.getElementById('stat-total').textContent = totalRows;
+            document.getElementById('stat-online').textContent = totalRows; // Assumindo todos online nesta simulação
+        }
+
+        // Função Combinada de Filtros (Filtro mútuo)
+        function filterTable() {
+            const searchText = searchInput.value.toLowerCase();
+            const selectedType = filterSelect.value;
+            const rows = tableBody.querySelectorAll('tr');
+
+            rows.forEach(row => {
+                const ip = row.cells[0].textContent.toLowerCase();
+                const mac = row.cells[1].textContent.toLowerCase();
+                const hostname = row.cells[2].textContent.toLowerCase();
+                const tipo = row.cells[3].textContent;
+                const fabricante = row.cells[4].textContent.toLowerCase();
+
+                const matchesSearch = ip.includes(searchText) || 
+                                      mac.includes(searchText) || 
