@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de IPs Remotos - Controlo Big MAC</title>
+    <!-- Tailwind CSS para um design moderno e rápido -->
+    <script src="https://tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
+
+    <div class="container mx-auto p-6 max-w-4xl">
+        <!-- Cabeçalho -->
+        <header class="mb-8 flex justify-between items-center border-b border-gray-800 pb-4">
+            <div>
+                <h1 class="text-3xl font-bold tracking-tight text-indigo-400">Controlo Big MAC</h1>
+                <p class="text-sm text-gray-400 mt-1">Gestor de IPs Remotos Filipe</p>
+            </div>
+            <button id="btnAbrirModal" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 shadow-lg shadow-indigo-600/20">
+                <span>+</span> Meter IP
+            </button>
+        </header>
+
+        <!-- Barra de Pesquisa e Filtros -->
+        <div class="mb-6">
+            <input type="text" id="inputPesquisa" placeholder="Pesquisar por Nome, IP ou MAC..." 
+                   class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition">
+        </div>
+
+        <!-- Zona de Controlo / Botões de Ação -->
+        <div class="bg-gray-800 p-4 rounded-xl mb-6 border border-gray-700 flex flex-wrap gap-3 items-center justify-between">
+            <div class="text-sm text-gray-400">
+                <span id="contadorSelecionados" class="font-bold text-indigo-400">0</span> IPs selecionados
+            </div>
+            <div class="flex gap-2">
+                <button id="btnAcaoLigar" disabled class="bg-emerald-600/50 text-emerald-300 px-4 py-2 rounded-lg font-medium cursor-not-allowed transition">Ligar Selecionados</button>
+                <button id="btnAcaoDesligar" disabled class="bg-amber-600/50 text-amber-300 px-4 py-2 rounded-lg font-medium cursor-not-allowed transition">Desligar Selecionados</button>
+                <button id="btnAcaoEliminar" disabled class="bg-rose-600/50 text-rose-300 px-4 py-2 rounded-lg font-medium cursor-not-allowed transition">Eliminar</button>
+            </div>
+        </div>
+
+        <!-- Tabela / Lista de IPs -->
+        <div class="bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-xl">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-850 border-b border-gray-700 text-gray-400 text-sm uppercase tracking-wider">
+                        <th class="p-4 w-12 text-center">
+                            <input type="checkbox" id="checkTodos" class="rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                        </th>
+                        <th class="p-4">Nome do Dispositivo</th>
+                        <th class="p-4">Endereço IP</th>
+                        <th class="p-4">Endereço MAC</th>
+                        <th class="p-4 text-center">Estado</th>
+                    </tr>
+                </thead>
+                <tbody id="listaIPs" class="divide-y divide-gray-700/50">
+                    <!-- Gerado dinamicamente via JS -->
+                </tbody>
+            </table>
+            <div id="listaVazia" class="hidden p-8 text-center text-gray-500">
+                Nenhum dispositivo encontrado.
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Adicionar Novo IP -->
+    <div id="modalForm" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 border border-gray-700 rounded-xl max-w-md w-full p-6 shadow-2xl transform transition-all scale-95 opacity-0 duration-200" id="modalConteudo">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span class="text-indigo-400">🖥️</span> Adicionar Novo Dispositivo
+            </h2>
+            <form id="formNovoIP" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Nome do Dispositivo</label>
+                    <input type="text" id="novoNome" required placeholder="Ex: Servidor Principal" 
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Endereço IP</label>
+                    <input type="text" id="novoIP" required placeholder="Ex: 192.168.1.50" pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">Endereço MAC</label>
+                    <input type="text" id="novoMAC" required placeholder="Ex: 00:1A:3F:F1:4C:C6" pattern="^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="btnFecharModal" class="bg-gray-700 hover:bg-gray-600 text-gray-300 px-4 py-2 rounded-lg font-medium transition">Cancelar</button>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition">Adicionar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lógica de Funcionamento (JavaScript) -->
+    <script>
+        // Dados Iniciais (Caso o localStorage esteja vazio)
+        const dadosIniciais = [
+            { id: 1, nome: "Desktop Escritório", ip: "192.160.1.10", mac: "AA:BB:CC:DD:EE:FF", online: true },
+            { id: 2, nome: "Raspberry Pi", ip: "192.160.1.25", mac: "11:22:33:44:55:66", online: false },
+            { id: 3, nome: "Nas Storage", ip: "10.0.0.5", mac: "00:11:22:33:44:55", online: true }
+        ];
+
+        // Estado Global da Aplicação
+        let dispositivos = JSON.parse(localStorage.getItem('dispositivos')) || dadosIniciais;
+        let selecionados = new Set();
+        let filtroPesquisa = "";
+
+        // Elementos do DOM
+        const listaIPs = document.getElementById('listaIPs');
+        const listaVazia = document.getElementById('listaVazia');
+        const inputPesquisa = document.getElementById('inputPesquisa');
+        const checkTodos = document.getElementById('checkTodos');
+        const contadorSelecionados = document.getElementById('contadorSelecionados');
+        
+        // Botões de Ação
+        const btnAcaoLigar = document.getElementById('btnAcaoLigar');
+        const btnAcaoDesligar = document.getElementById('btnAcaoDesligar');
+        const btnAcaoEliminar = document.getElementById('btnAcaoEliminar');
+
+        // Modais
+        const modalForm = document.getElementById('modalForm');
+        const modalConteudo = document.getElementById('modalConteudo');
+        const btnAbrirModal = document.getElementById('btnAbrirModal');
+        const btnFecharModal = document.getElementById('btnFecharModal');
+        const formNovoIP = document.getElementById('formNovoIP');
+
+        // Guardar dados no localStorage
+        function guardarDados() {
+            localStorage.setItem('dispositivos', JSON.stringify(dispositivos));
+        }
+
+        // Renderizar a tabela com os filtros aplicados
+        function renderizar() {
+            listaIPs.innerHTML = "";
+            
+            const dispositivosFiltrados = dispositivos.filter(d => 
+                d.nome.toLowerCase().includes(filtroPesquisa.toLowerCase()) ||
+                d.ip.includes(filtroPesquisa) ||
+                d.mac.toLowerCase().includes(filtroPesquisa.toLowerCase())
+            );
+
+            if (dispositivosFiltrados.length === 0) {
+                listaVazia.classList.remove('hidden');
+            } else {
+                listaVazia.classList.add('hidden');
+            }
+
+            dispositivosFiltrados.forEach(disp => {
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-gray-750 transition ${selecionados.has(disp.id) ? 'bg-indigo-950/30' : ''}`;
+                
+                tr.innerHTML = `
+                    <td class="p-4 text-center">
+                        <input type="checkbox" data-id="${disp.id}" ${selecionados.has(disp.id) ? 'checked' : ''} 
+                               class="check-item rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500 h-4 w-4">
+                    </td>
+                    <td class="p-4 font-medium text-white">${disp.nome}</td>
+                    <td class="p-4 font-mono text-gray-300">${disp.ip}</td>
+                    <td class="p-4 font-mono text-gray-400">${disp.mac}</td>
+                    <td class="p-4 text-center">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${disp.online ? 'bg-emerald-400/10 text-emerald-400' : 'bg-rose-400/10 text-rose-400'}">
+                            <span class="h-1.5 w-1.5 rounded-full ${disp.online ? 'bg-emerald-400' : 'bg-rose-400'} mr-1.5"></span>
+                            ${disp.online ? 'Online' : 'Offline'}
+                        </span>
+                    </td>
+                `;
