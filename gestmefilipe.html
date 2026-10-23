@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GestMeFilipe - Sistema @flda</title>
+    <!-- Incluir o SDK do Supabase via CDN -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f7f6; color: #333; }
+        .container { max-width: 500px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group { display: flex; align-items: center; }
+        .input-group input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; }
+        .input-group .sufixo { background: #ddd; padding: 10px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; font-weight: bold; }
+        input[type="password"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .dashboard { display: none; margin-top: 20px; }
+        .admin-zone { display: none; background: #ffeeba; padding: 15px; border-radius: 4px; margin-top: 20px; border: 1px solid #ffe8a1; }
+        .status { margin-top: 15px; color: red; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Acesso Integrado - GestMeFilipe</h2>
+    
+    <!-- Formulário de Login Único -->
+    <div id="login-form">
+        <div class="form-group">
+            <label for="username">Utilizador / Conta:</label>
+            <div class="input-group">
+                <placeholder="Ex: admin ou user1">
+                <input type="text" id="username" placeholder="admin, user1, user2..." required>
+                <span class="sufixo">@flda</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="password">Palavra-passe:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button onclick="fazerLogin()">Entrar no Sistema</button>
+        <div id="login-status" class="status"></div>
+    </div>
+
+    <!-- Área Logada (Dashboard) -->
+    <div id="dashboard" class="dashboard">
+        <h3>Bem-vindo, <span id="user-display"></span>!</h3>
+        <p>Sessão ativa no projeto Supabase.</p>
+        
+        <!-- Painel de Controlo Exclusivo do Admin (admin@flda) -->
+        <div id="admin-zone" class="admin-zone">
+            <h4>Painel de Controlo do Administrador (user0)</h4>
+            <p>Criar novos utilizadores operacionais ou gerir os 4 iniciais:</p>
+            <div class="form-group">
+                <div class="input-group">
+                    <input type="text" id="new-user" placeholder="Ex: user4">
+                    <span class="sufixo">@flda</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type="password" id="new-password" placeholder="Palavra-passe para o novo utilizador">
+            </div>
+            <button onclick="criarNovoUtilizador()" style="background: #28a745;">Registar / Ativar Utilizador</button>
+            <div id="admin-status" class="status" style="color: green;"></div>
+        </div>
+
+        <button onclick="fazerLogout()" style="margin-top: 20px; background: #dc3545;">Sair</button>
+    </div>
+</div>
+
+<script>
+    // Configuração do teu Supabase (Substitui com as tuas credenciais do projeto wgobasededados-2)
+    const SUPABASE_URL = "https://supabase.co";
+    const SUPABASE_ANON_KEY = "TUA-CHAVE-ANON-AQUI";
+    
+    const supabase = genSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function fazerLogin() {
+        const user = document.getElementById('username').value.trim();
+        const pass = document.getElementById('password').value;
+        const statusDiv = document.getElementById('login-status');
+        
+        // Monta o email final omitindo qualquer duplicação manual do utilizador
+        const emailFinal = user.includes('@') ? user : `${user}@flda`;
+
+        statusDiv.innerText = "A autenticar...";
+
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email: emailFinal,
+            password: pass,
+        });
+
+        if (error) {
+            statusDiv.innerText = "Erro no acesso: " + error.message;
+            return;
+        }
+
+        statusDiv.innerText = "";
+        carregarDashboard(data.user);
+    }
+
+    async function carregarDashboard(user) {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('user-display').innerText = user.email;
+
+        // Verificar na tabela pública se este email tem a regra 'admin'
+        const { data: perfil } = await supabase
+            .from('perfis')
+            .select('regra')
+            .eq('id', user.id)
+            .single();
+
+        if (perfil && perfil.regra === 'admin') {
+            document.getElementById('admin-zone').style.display = 'block';
+        }
+    }
+
+    async function criarNovoUtilizador() {
+        const newUserPrefix = document.getElementById('new-user').value.trim();
+        const newPass = document.getElementById('new-password').value;
+        const adminStatus = document.getElementById('admin-status');
+
+        const novoEmail = `${newUserPrefix}@flda`;
+
+        // Registo direto via Auth (o trigger SQL garante a inserção na tabela perfis com regra 'user')
+        const { data, error } = await supabase.auth.signUp({
+            email: novoEmail,
+            password: newPass
+        });
+
+        if (error) {
+            adminStatus.style.color = 'red';
+            adminStatus.innerText = "Erro ao criar: " + error.message;
+        } else {
+            adminStatus.style.color = 'green';
+            adminStatus.innerText = `Utilizador ${novoEmail} criado e pronto com sucesso!`;
+            document.getElementById('new-user').value = '';
+            document.getElementById('new-password').value = '';
+        }
+    }
+
+    async function fazerLogout() {
+        await supabase.auth.signOut();
+        window.location.reload();
+    }
+</script>
+</body>
+</html>
