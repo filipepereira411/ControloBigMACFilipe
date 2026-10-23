@@ -3,150 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GestMeFilipe - Sistema @flda</title>
-    <!-- Incluir o SDK do Supabase via CDN -->
+    <title>GestMeFilipe - Autenticação @flda</title>
+    <!-- Incluir o SDK oficial do Supabase -->
     <script src="https://jsdelivr.net"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background: #f4f7f6; color: #333; }
-        .container { max-width: 500px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .input-group { display: flex; align-items: center; }
-        .input-group input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; }
-        .input-group .sufixo { background: #ddd; padding: 10px; border: 1px solid #ccc; border-left: none; border-radius: 0 4px 4px 0; font-weight: bold; }
-        input[type="password"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f3; margin: 0; padding: 40px; color: #333; }
+        .card { max-width: 450px; background: white; margin: auto; padding: 35px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+        .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid #ddd; }
+        .tab { flex: 1; text-align: center; padding: 12px; cursor: pointer; font-weight: bold; color: #666; }
+        .tab.active { color: #007bff; border-bottom: 3px solid #007bff; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 14px; }
+        .input-group { display: flex; }
+        .input-group input { flex: 1; padding: 11px; border: 1px solid #ccc; border-radius: 6px 0 0 6px; font-size: 15px; }
+        .input-group .sufixo { background: #e9ecef; padding: 11px; border: 1px solid #ccc; border-left: none; border-radius: 0 6px 6px 0; font-weight: bold; color: #495057; }
+        .input-normal { width: 100%; padding: 11px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 15px; }
+        button { width: 100%; padding: 13px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 10px; }
         button:hover { background: #0056b3; }
-        .dashboard { display: none; margin-top: 20px; }
-        .admin-zone { display: none; background: #ffeeba; padding: 15px; border-radius: 4px; margin-top: 20px; border: 1px solid #ffe8a1; }
-        .status { margin-top: 15px; color: red; font-weight: bold; }
+        .status { margin-top: 15px; font-weight: bold; font-size: 14px; text-align: center; }
+        .dashboard { display: none; }
+        .painel-admin { background: #fff3cd; border: 1px solid #ffeeba; padding: 20px; border-radius: 8px; margin-top: 20px; color: #856404; }
+        .caixa-mensagens { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; margin-top: 20px; }
+        .msg-item { border-bottom: 1px solid #dee2e6; padding: 8px 0; font-size: 13px; }
+        .msg-item:last-child { border-bottom: none; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Acesso Integrado - GestMeFilipe</h2>
-    
-    <!-- Formulário de Login Único -->
-    <div id="login-form">
+<div class="card">
+    <!-- Ecrã de Login / Registo Unificado -->
+    <div id="auth-container">
+        <div class="tabs">
+            <div id="tab-login" class="tab active" onclick="mudarAba('login')">Entrar</div>
+            <div id="tab-registo" class="tab" onclick="mudarAba('registo')">Criar Conta</div>
+        </div>
+
+        <h3 id="auth-titulo">Acesso ao Sistema</h3>
+        
         <div class="form-group">
             <label for="username">Utilizador / Conta:</label>
             <div class="input-group">
-                <placeholder="Ex: admin ou user1">
-                <input type="text" id="username" placeholder="admin, user1, user2..." required>
+                <input type="text" id="username" placeholder="Ex: admin, user0, user1" required>
                 <span class="sufixo">@flda</span>
             </div>
         </div>
+
         <div class="form-group">
             <label for="password">Palavra-passe:</label>
-            <input type="password" id="password" required>
+            <input type="password" id="password" class="input-normal" placeholder="Digita a tua palavra-passe" required>
         </div>
-        <button onclick="fazerLogin()">Entrar no Sistema</button>
-        <div id="login-status" class="status"></div>
+
+        <button id="auth-botao" onclick="processarAutenticacao()">Entrar no Sistema</button>
+        <div id="auth-status" class="status"></div>
     </div>
 
-    <!-- Área Logada (Dashboard) -->
+    <!-- Ecrã de Dashboard (Aparece após o Login com Sucesso) -->
     <div id="dashboard" class="dashboard">
-        <h3>Bem-vindo, <span id="user-display"></span>!</h3>
-        <p>Sessão ativa no projeto Supabase.</p>
+        <h2>Olá, <span id="user-display" style="color: #007bff;"></span>!</h2>
+        <p>Ligação estabelecida com o projeto <strong>wgo-basededados2</strong>.</p>
         
-        <!-- Painel de Controlo Exclusivo do Admin (admin@flda) -->
-        <div id="admin-zone" class="admin-zone">
-            <h4>Painel de Controlo do Administrador (user0)</h4>
-            <p>Criar novos utilizadores operacionais ou gerir os 4 iniciais:</p>
-            <div class="form-group">
-                <div class="input-group">
-                    <input type="text" id="new-user" placeholder="Ex: user4">
-                    <span class="sufixo">@flda</span>
-                </div>
-            </div>
-            <div class="form-group">
-                <input type="password" id="new-password" placeholder="Palavra-passe para o novo utilizador">
-            </div>
-            <button onclick="criarNovoUtilizador()" style="background: #28a745;">Registar / Ativar Utilizador</button>
-            <div id="admin-status" class="status" style="color: green;"></div>
+        <!-- Caixa de Correio -->
+        <div class="caixa-mensagens">
+            <h4>📬 Minha Caixa de Correio (@flda)</h4>
+            <div id="lista-correio" style="font-size: 13px; color: #555;">A carregar mensagens...</div>
         </div>
 
-        <button onclick="fazerLogout()" style="margin-top: 20px; background: #dc3545;">Sair</button>
+        <!-- Painel de Controlo Exclusivo do Admin / User0 -->
+        <div id="painel-admin" class="painel-admin" style="display: none;">
+            <h4>🛠️ Painel de Gestão (Admin / User0)</h4>
+            <p>Enviar um aviso global no sistema para todos os utilizadores:</p>
+            <div class="form-group">
+                <input type="text" id="msg-assunto" class="input-normal" placeholder="Assunto do aviso" style="margin-bottom: 8px;">
+                <textarea id="msg-texto" class="input-normal" placeholder="Escreve a mensagem..." rows="3"></textarea>
+            </div>
+            <button onclick="enviarAvisoGlobal()" style="background: #28a745; padding: 8px;">Publicar Aviso</button>
+            <div id="admin-status" style="font-size: 12px; margin-top: 5px;"></div>
+        </div>
+
+        <button onclick="fazerLogout()" style="background: #dc3545; margin-top: 25px;">Sair do Sistema</button>
     </div>
 </div>
 
 <script>
-    // Configuração do teu Supabase (Substitui com as tuas credenciais do projeto wgobasededados-2)
+    // Credenciais Oficiais do teu projeto wgo-basededados2
     const SUPABASE_URL = "https://supabase.co";
-    const SUPABASE_ANON_KEY = "TUA-CHAVE-ANON-AQUI";
-    
-    const supabase = genSupabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ATENÇÃO: Substitui o texto abaixo pela tua chave "anon" completa obtida no painel do Supabase
+    const SUPABASE_ANON_KEY = "sb_publishable_wUzc-XcZVn41YVV..."; 
 
-    async function fazerLogin() {
-        const user = document.getElementById('username').value.trim();
+    // Inicializar o cliente do Supabase
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let modoAtual = 'login';
+
+    function mudarAba(modo) {
+        modoAtual = modo;
+        document.getElementById('tab-login').classList.toggle('active', modo === 'login');
+        document.getElementById('tab-registo').classList.toggle('active', modo === 'registo');
+        document.getElementById('auth-titulo').innerText = modo === 'login' ? 'Acesso ao Sistema' : 'Registo de Nova Conta';
+        document.getElementById('auth-botao').innerText = modo === 'login' ? 'Entrar no Sistema' : 'Submeter Novo Registo';
+        document.getElementById('auth-status').innerText = '';
+    }
+
+    async function processarAutenticacao() {
+        const user = document.getElementById('username').value.trim().toLowerCase();
         const pass = document.getElementById('password').value;
-        const statusDiv = document.getElementById('login-status');
-        
-        // Monta o email final omitindo qualquer duplicação manual do utilizador
-        const emailFinal = user.includes('@') ? user : `${user}@flda`;
+        const statusDiv = document.getElementById('auth-status');
 
-        statusDiv.innerText = "A autenticar...";
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: emailFinal,
-            password: pass,
-        });
-
-        if (error) {
-            statusDiv.innerText = "Erro no acesso: " + error.message;
+        if (!user || !pass) {
+            statusDiv.style.color = "red";
+            statusDiv.innerText = "Preenche todos os campos obrigatórios.";
             return;
         }
 
-        statusDiv.innerText = "";
-        carregarDashboard(data.user);
+        const emailFinal = user.includes('@') ? user : `${user}@flda`;
+        statusDiv.style.color = "orange";
+        statusDiv.innerText = "A processar...";
+
+        // [VALIDAÇÃO LOCAL STRICTA DAS PALAVRAS-PASSE]
+        if (emailFinal === 'admin@flda' || emailFinal === 'user0@flda') {
+            if (pass !== 'ti') {
+                statusDiv.style.color = "red";
+                statusDiv.innerText = "Erro: A palavra-passe para Administradores (admin/user0) deve ser 'ti'.";
+                return;
+            }
+        } else {
+            if (pass !== '1234') {
+                statusDiv.style.color = "red";
+                statusDiv.innerText = "Erro: A palavra-passe para utilizadores comuns deve ser '1234'.";
+                return;
+            }
+        }
+
+        if (modoAtual === 'login') {
+            // Executar Autenticação
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: emailFinal,
+                password: pass
+            });
+
+            if (error) {
+                statusDiv.style.color = "red";
+                statusDiv.innerText = "Erro ao entrar: " + error.message;
+            } else {
+                statusDiv.innerText = "";
+                carregarInterfaceLogada(data.user);
+            }
+        } else {
+            // Executar Registo Manual
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: emailFinal,
+                password: pass
+            });
+
+            if (error) {
+                statusDiv.style.color = "red";
+                statusDiv.innerText = "Erro ao registar: " + error.message;
+            } else {
+                statusDiv.style.color = "green";
+                statusDiv.innerText = "Conta registada! Podes agora mudar para a aba 'Entrar'.";
+            }
+        }
     }
 
-    async function carregarDashboard(user) {
-        document.getElementById('login-form').style.display = 'none';
+    async function carregarInterfaceLogada(user) {
+        document.getElementById('auth-container').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('user-display').innerText = user.email;
 
-        // Verificar na tabela pública se este email tem a regra 'admin'
-        const { data: perfil } = await supabase
+        // Validar privilégios administrativos na tabela pública de perfis
+        const { data: perfil } = await supabaseClient
             .from('perfis')
             .select('regra')
             .eq('id', user.id)
             .single();
 
         if (perfil && perfil.regra === 'admin') {
-            document.getElementById('admin-zone').style.display = 'block';
+            document.getElementById('painel-admin').style.display = 'block';
+        }
+
+        // Procurar mensagens destinadas ao utilizador ou globais
+        const { data: mensagens, error } = await supabaseClient
+            .from('caixa_correio')
+            .select('*')
+            .or(`destinatario_email.eq.${user.email},destinatario_email.eq.todos@flda`);
+
+        const listaDiv = document.getElementById('lista-correio');
+        if (mensagens && mensagens.length > 0) {
+            listaDiv.innerHTML = mensagens.map(m => `
+                <div class="msg-item">
+                    <strong>[${m.assunto}]</strong>: ${m.mensagem}
+                </div>
+            `).join('');
+        } else {
+            listaDiv.innerText = "Nenhuma mensagem encontrada.";
         }
     }
 
-    async function criarNovoUtilizador() {
-        const newUserPrefix = document.getElementById('new-user').value.trim();
-        const newPass = document.getElementById('new-password').value;
+    async function enviarAvisoGlobal() {
+        const assunto = document.getElementById('msg-assunto').value.trim();
+        const texto = document.getElementById('msg-texto').value.trim();
         const adminStatus = document.getElementById('admin-status');
 
-        const novoEmail = `${newUserPrefix}@flda`;
-
-        // Registo direto via Auth (o trigger SQL garante a inserção na tabela perfis com regra 'user')
-        const { data, error } = await supabase.auth.signUp({
-            email: novoEmail,
-            password: newPass
-        });
-
-        if (error) {
+        if (!assunto || !texto) {
             adminStatus.style.color = 'red';
-            adminStatus.innerText = "Erro ao criar: " + error.message;
-        } else {
-            adminStatus.style.color = 'green';
-            adminStatus.innerText = `Utilizador ${novoEmail} criado e pronto com sucesso!`;
-            document.getElementById('new-user').value = '';
-            document.getElementById('new-password').value = '';
+            adminStatus.innerText = "Por favor, preencha o assunto e o texto do aviso.";
+            return;
         }
-    }
 
-    async function fazerLogout() {
-        await supabase.auth.signOut();
-        window.location.reload();
-    }
-</script>
-</body>
-</html>
